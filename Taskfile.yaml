@@ -1,0 +1,29 @@
+version: "3"
+
+dotenv:
+  - .env
+
+vars:
+  IMAGE: lambda-go
+
+tasks:
+  build:all:
+    cmds:
+      - go build -o ./bin/lambda ./cmd/lambda
+      - go build -o ./bin/server ./cmd/server
+      - go build -o ./bin/command ./discord/commands
+  deploy:
+    desc: image build and push
+    vars:
+      TAG: aws
+    cmds:
+      - docker build --target {{.TAG}} -t {{.IMAGE}}:{{.TAG}} .
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      - docker tag {{.IMAGE}}:{{.TAG}} $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_REGISTRY:latest
+  local:
+    desc: image build and run for local lambda image
+    vars:
+      TAG: local
+    cmds:
+      - docker build --target {{.TAG}} -t {{.IMAGE}}:{{.TAG}} .
+      - docker run -p 9000:8080 --rm -it {{.IMAGE}}:{{.TAG}}
