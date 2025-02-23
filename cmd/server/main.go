@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/eeekcct/lambda-golang-discord-bot/discord/config"
 	"github.com/eeekcct/lambda-golang-discord-bot/discord/handler"
 	"github.com/joho/godotenv"
 )
@@ -21,8 +22,10 @@ func main() {
 		body := make([]byte, r.ContentLength)
 		r.Body.Read(body)
 		headers := ConvertHTTPHeaders(r.Header)
+		conf := config.NewConfig()
+		h := handler.NewHandler(conf)
 
-		status, responseBody := handler.HandleRequest(context.Background(), string(body), headers)
+		status, responseBody := h.HandleRequest(context.Background(), string(body), headers, h.HandleServer)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		w.Write([]byte(responseBody))

@@ -6,20 +6,22 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/eeekcct/lambda-golang-discord-bot/discord/config"
 )
 
 type TokenResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
-func GetToken(config *Config) (string, error) {
+func GetToken(conf *config.Config) (string, error) {
 	data := "grant_type=client_credentials&scope=applications.commands.update"
-	req, err := http.NewRequest("POST", config.TOKEN_URL, bytes.NewBuffer([]byte(data)))
+	req, err := http.NewRequest("POST", conf.TOKEN_URL, bytes.NewBuffer([]byte(data)))
 	if err != nil {
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.SetBasicAuth(config.CLIENT_ID, config.CLIENT_SECRET)
+	req.SetBasicAuth(conf.CLIENT_ID, conf.CLIENT_SECRET)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

@@ -9,7 +9,8 @@ vars:
 tasks:
   build:all:
     cmds:
-      - go build -o ./bin/lambda ./cmd/lambda
+      - go build -o ./bin/lambda ./cmd/lambda/handler
+      - go build -o ./bin/server ./cmd/server/bedrock
       - go build -o ./bin/server ./cmd/server
       - go build -o ./bin/command ./discord/commands
   deploy:
@@ -17,9 +18,10 @@ tasks:
     vars:
       TAG: aws
     cmds:
-      - docker build --target {{.TAG}} -t {{.IMAGE}}:{{.TAG}} .
+      - docker build --provenance=false --platform linux/amd64 --target {{.TAG}} -t {{.IMAGE}}:{{.TAG}} .
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
       - docker tag {{.IMAGE}}:{{.TAG}} $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_REGISTRY:latest
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$AWS_REGISTRY:latest
   local:
     desc: image build and run for local lambda image
     vars:

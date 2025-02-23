@@ -8,13 +8,22 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/eeekcct/lambda-golang-discord-bot/discord/config"
 )
 
 type Interaction struct {
-	Type int `json:"type"`
-	Data struct {
-		Name string `json:"name"`
+	Type  int    `json:"type"`
+	Token string `json:"token"`
+	Data  struct {
+		Name    string   `json:"name"`
+		Options []Option `json:"options"`
 	} `json:"data"`
+}
+
+type Option struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type InteractionResponse struct {
@@ -35,7 +44,18 @@ func NewInteractionResponse(content string) *InteractionResponse {
 	}
 }
 
-func HandleRequest(ctx context.Context, body string, headers map[string]string) (int, string) {
+type Handler struct {
+	Config *config.Config
+}
+
+func NewHandler(config *config.Config) *Handler {
+	return &Handler{
+		Config: config,
+	}
+}
+
+func (h *Handler) HandleRequest(ctx context.Context, body string, headers map[string]string, process func(context.Context, string, string)) (int, string) {
+	var err error
 	key := os.Getenv("DISCORD_PUBLIC_KEY")
 	decodedKey, err := hex.DecodeString(key)
 	if err != nil {
@@ -64,20 +84,29 @@ func HandleRequest(ctx context.Context, body string, headers map[string]string) 
 	}
 
 	// PINGリスクエスト以外のリクエストへの応答
-	if interaction.Data.Name == "ping" {
+	h.Config.INTERACTION_TOKEN = interaction.Token
+	var res *InteractionResponse
+	switch interaction.Data.Name {
+	case "ping":
 		log.Println("pong!")
-		res := NewInteractionResponse("pong!")
-		bytes, err := json.Marshal(res)
-		if err != nil {
-			log.Println("レスポンスのパースエラー")
-			return http.StatusInternalServerError, "Error"
-		}
-		log.Printf("レスポンス: %s", string(bytes))
-
-		return http.StatusOK, string(bytes)
+		res = NewInteractionResponse("pong!")
+	case "bedrock":
+		log.Println("AWS Bedrockからのリクエスト")
+		prompt := interaction.Data.Options[0].Value
+		process(ctx, "bedrock", prompt)
+		return http.StatusOK, `{"type": 5}`
+	default:
+		log.Println("不明なリクエスト")
+		return http.StatusInternalServerError, "Error"
 	}
 
-	return http.StatusInternalServerError, "Error"
+	bytes, err := json.Marshal(res)
+	if err != nil {
+		log.Println("レスポンスのパースエラー")
+		return http.StatusInternalServerError, "Error"
+	}
+	log.Printf("レスポンス: %s", string(bytes))
+	return http.StatusOK, string(bytes)
 }
 
 // Discordの署名検証をする関数
