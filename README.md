@@ -27,7 +27,7 @@ This project is a Discord bot written in Golang, designed to be deployed on AWS 
 
 Before you begin, ensure you have met the following requirements:
 
-- Go 1.23 or later
+- Go 1.26.10 or later (use a supported Go release with current security patches)
 - Docker
 - AWS CLI
 - ngrok (for local development)

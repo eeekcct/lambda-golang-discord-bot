@@ -1,4 +1,4 @@
-FROM golang:1.23.2-alpine3.20 AS build
+FROM golang:1.26.10-alpine3.24 AS build
 
 WORKDIR /lambda/go
 COPY  . ./
