@@ -82,6 +82,23 @@ To run the bot locally:
    go run ./cmd/server
    ```
 
+### Standalone HTTP limits
+
+The `cmd/server` HTTP endpoint accepts request bodies up to 1 MiB (1,048,576
+bytes), including chunked requests. This application limit leaves headroom for
+the supported commands and interaction JSON metadata; it is not a Discord
+protocol limit. Larger bodies return HTTP 413, and incomplete or failed body
+reads return HTTP 400 before signature verification. Signatures are checked
+against the complete, unchanged request bytes.
+
+The server allows 5 seconds to read headers, 10 seconds to read the entire
+request (including headers), 10 seconds to write the response, and 60 seconds
+between keep-alive requests. These are connection resource limits with room
+for ordinary network delays, not an extension of Discord's 3-second initial
+response deadline. The existing deferred command processing is unchanged.
+These limits apply only to `go run ./cmd/server`, not the Lambda/API Gateway
+handler or the Docker RIE invocation endpoint.
+
 ## Local Development
 
 To build and run the bot locally using Docker:
