@@ -22,8 +22,15 @@ jobs:
         with:
           persist-credentials: false
 
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version-file: go.mod
+          cache: false
+
       - name: Test smoke-test assertions and signing
-        run: python3 -m unittest discover -s .github/scripts -p 'test_rie_smoke.py' -v
+        run: |
+          go test -v ./cmd/ci/rie-smoke
+          go build -o "$RUNNER_TEMP/rie-smoke" ./cmd/ci/rie-smoke
 
       - name: Build both Lambda targets
         run: |
@@ -32,8 +39,8 @@ jobs:
 
       - name: Invoke both containers through RIE without external networking
         run: |
-          python3 .github/scripts/rie_smoke.py --target aws --image lambda-ci:aws
-          python3 .github/scripts/rie_smoke.py --target local --image lambda-ci:local
+          "$RUNNER_TEMP/rie-smoke" -target aws -image lambda-ci:aws
+          "$RUNNER_TEMP/rie-smoke" -target local -image lambda-ci:local
 
       - name: Remove any remaining test containers
         if: always()
