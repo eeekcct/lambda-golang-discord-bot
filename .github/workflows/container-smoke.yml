@@ -27,9 +27,9 @@ jobs:
           go-version-file: go.mod
           cache: false
 
-      - name: Test smoke-test assertions and signing
+      - name: Test Go packages and build smoke-test helper
         run: |
-          go test -v ./cmd/ci/rie-smoke
+          go test -v ./...
           go build -o "$RUNNER_TEMP/rie-smoke" ./cmd/ci/rie-smoke
 
       - name: Build both Lambda targets
